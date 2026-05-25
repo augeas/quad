@@ -11,8 +11,6 @@ fn rand_coeffs(n: usize) -> (Vec<String>, Array<f32, Ix3>, Array<f32, Ix3>) {
 	let coeff = c.slice(s![.., .., 1..]).to_owned();
 	let chars = (i + 65).mapv(|chr| chr as u8 as char);
 	let names: Vec<String> = chars.outer_iter().map(String::from_iter).collect();
-	//println!("{:?}", bias);
-	//println!("{:?}", coeff);
 	return (names, bias, coeff);
 }
 
@@ -35,12 +33,24 @@ fn var_vec(var: &Array<f32, Ix3>) -> Array<f32, Ix3> {
 	return vec
 }
 
+fn quad_iterate(var: &Array<f32, Ix3>, bias: &Array<f32, Ix3>, coeff: &Array<f32, Ix3>) -> Array<f32, Ix3> {
+	let n = var.shape()[0];
+	let vec = var_vec(&var);
+	let mut new_var = Array3::<f32>::zeros((n, 2, 1));
+	
+	for i in 0..n {
+		let point = coeff.slice(s![i, .., ..]).dot(&(vec.slice(s![i, .., ..])));
+		new_var.slice_mut(s![i, .., ..]).assign(&point);
+	}
+	return bias + &new_var;
+}
+
 fn main() {
-	rand_coeffs(4);
-	let v = init_var(3);
-	let vv = var_vec(&v);
+	let (names, bias, coeffs) = rand_coeffs(4);
+	let v = init_var(4);
+	//let vv = var_vec(&v);
 	println!("{:?}", v);
-	println!("{:?}", vv);
+	println!("{:?}", quad_iterate(&v, &bias, &coeffs));
 	//println!("Hello, world!");
 }
 
